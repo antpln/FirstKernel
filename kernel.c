@@ -87,9 +87,27 @@ void terminal_putchar(char c)
 {
 	terminal_putentryat(c, terminal_color, terminal_column, terminal_row);
 	if (++terminal_column == VGA_WIDTH) {
+		scroll_down();
+	}
+	if (c == '\n') {
 		terminal_column = 0;
 		if (++terminal_row == VGA_HEIGHT)
 			terminal_row = 0;
+	}
+}
+
+void scroll_down() 
+{
+	for (size_t y = 1; y < VGA_HEIGHT; y++) {
+		for (size_t x = 0; x < VGA_WIDTH; x++) {
+			const size_t index = y * VGA_WIDTH + x;
+			const size_t prev_index = (y - 1) * VGA_WIDTH + x;
+			terminal_buffer[prev_index] = terminal_buffer[index];
+		}
+	}
+	for (size_t x = 0; x < VGA_WIDTH; x++) {
+		const size_t index = (VGA_HEIGHT - 1) * VGA_WIDTH + x;
+		terminal_buffer[index] = vga_entry(' ', terminal_color);
 	}
 }
 

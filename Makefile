@@ -9,6 +9,10 @@ INCLUDE_DIR = include
 BUILD_DIR = build
 BOOT_DIR = boot
 KERNEL_DIR = $(SRC_DIR)/kernel
+KERNEL_DEST = /kernel
+
+# Create kernel directory if it doesn't exist
+$(shell mkdir -p $(KERNEL_DEST))
 
 # Compiler flags
 CFLAGS = -O2 -g -std=gnu99 -ffreestanding -Wall -Wextra -I$(INCLUDE_DIR)
@@ -32,7 +36,7 @@ KERNEL_ELF = $(BUILD_DIR)/kernel.elf
 QEMU = qemu-system-i386
 QEMU_FLAGS = -kernel $(KERNEL_ELF)
 
-.PHONY: all clean run directories
+.PHONY: all clean run directories iso
 
 all: directories $(KERNEL_ELF)
 
@@ -42,7 +46,8 @@ directories:
 	@mkdir -p $(BUILD_DIR)/boot
 
 $(KERNEL_ELF): $(OBJECTS)
-	$(CXX) -T linker.ld -o $@ $(LDFLAGS) $(OBJECTS) -lgcc
+	$(CXX) -T linker.ld -o $(KERNEL_DEST)/kernel.bin $(LDFLAGS) $(OBJECTS) -lgcc
+	grub-file --is-x86-multiboot $(KERNEL_DEST)/kernel.bin
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
 	@mkdir -p $(dir $@)
@@ -55,6 +60,12 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 $(BUILD_DIR)/boot/%.o: $(BOOT_DIR)/%.s
 	@mkdir -p $(dir $@)
 	$(AS) $< -o $@
+
+iso: $(KERNEL_ELF)
+	mkdir -p isodir/boot/grub
+	cp $(KERNEL_DEST)/kernel.bin isodir/boot/kernel.bin
+	cp grub.cfg isodir/boot/grub/grub.cfg
+	grub-mkrescue -o myos.iso isodir
 
 run: $(KERNEL_ELF)
 	$(QEMU) $(QEMU_FLAGS)

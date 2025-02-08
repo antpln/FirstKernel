@@ -1,5 +1,72 @@
 #include <kernel/vga.h>
 
-// Move all VGA-related functions here from kernel.cpp
-// (terminal_initialize, terminal_setcolor, terminal_putentryat, etc.)
-// ...existing VGA implementation...
+Terminal::Terminal() : row(0), column(0), color(0), buffer(nullptr) {}
+
+uint8_t Terminal::make_color(enum vga_color fg, enum vga_color bg) {
+    return fg | bg << 4;
+}
+
+uint16_t Terminal::make_entry(unsigned char uc, uint8_t color) {
+    return (uint16_t)uc | (uint16_t)color << 8;
+}
+
+void Terminal::initialize() {
+    row = 0;
+    column = 0;
+    color = make_color(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK);
+    buffer = (uint16_t*)0xB8000;
+    
+    for (size_t y = 0; y < VGA_HEIGHT; y++) {
+        for (size_t x = 0; x < VGA_WIDTH; x++) {
+            buffer[y * VGA_WIDTH + x] = make_entry(' ', color);
+        }
+    }
+}
+
+void Terminal::putentry_at(char c, uint8_t color, size_t x, size_t y) {
+    const size_t index = y * VGA_WIDTH + x;
+    buffer[index] = make_entry(c, color);
+}
+
+void Terminal::new_line() {
+    column = 0;
+    if (++row == VGA_HEIGHT) {
+        // Scroll content up
+        for (size_t y = 0; y < VGA_HEIGHT - 1; y++) {
+            for (size_t x = 0; x < VGA_WIDTH; x++) {
+                buffer[y * VGA_WIDTH + x] = buffer[(y + 1) * VGA_WIDTH + x];
+            }
+        }
+        // Clear last line
+        for (size_t x = 0; x < VGA_WIDTH; x++) {
+            buffer[(VGA_HEIGHT-1) * VGA_WIDTH + x] = make_entry(' ', color);
+        }
+        row--;
+    }
+}
+
+void Terminal::putchar(char c) {
+    if (c == '\n') {
+        new_line();
+        return;
+    }
+
+    putentry_at(c, color, column, row);
+    if (++column == VGA_WIDTH) {
+        new_line();
+    }
+}
+
+void Terminal::setcolor(uint8_t new_color) {
+    color = new_color;
+}
+
+void Terminal::setfull_color(enum vga_color fg, enum vga_color bg) {
+    color = make_color(fg, bg);
+}
+
+void Terminal::writestring(const char* str) {
+    while (*str) {
+        putchar(*str++);
+    }
+}

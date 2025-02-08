@@ -30,7 +30,7 @@ System V ABI standard and de-facto extensions. The compiler will assume the
 stack is properly aligned and failure to align the stack will result in
 undefined behavior.
 */
-.section .bss
+.section .bootstrap_stack, "aw", @nobits
 .align 16
 stack_bottom:
 .skip 16384 # 16 KiB
@@ -63,7 +63,7 @@ _start:
 	stack (as it grows downwards on x86 systems). This is necessarily done
 	in assembly as languages such as C cannot function without a stack.
 	*/
-	mov $stack_top, %esp
+	movl $stack_top, %esp
 
 	/*
 	This is a good place to initialize crucial processor state before the

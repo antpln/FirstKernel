@@ -70,3 +70,8 @@ void Terminal::writestring(const char* str) {
         putchar(*str++);
     }
 }
+
+void Terminal::writeLine(const char* str) {
+    writestring(str);
+    new_line();
+}

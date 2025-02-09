@@ -44,6 +44,7 @@ public:
     void setcolor(uint8_t color);
     void setfull_color(enum vga_color fg, enum vga_color bg);
     void writestring(const char* str);
+    void writeLine(const char *str);
     void putchar(char c);
     uint8_t make_color(enum vga_color fg, enum vga_color bg);
 };

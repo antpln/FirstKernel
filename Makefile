@@ -9,7 +9,7 @@ INCLUDE_DIR = include
 BUILD_DIR = build
 BOOT_DIR = boot
 KERNEL_DIR = $(SRC_DIR)/kernel
-KERNEL_DEST = /kernel
+KERNEL_DEST = ./kernel
 
 # Create kernel directory if it doesn't exist
 $(shell mkdir -p $(KERNEL_DEST))
@@ -23,14 +23,18 @@ LDFLAGS = -ffreestanding -O2 -nostdlib
 CSOURCES = $(shell find $(SRC_DIR) -name '*.c')
 CPPSOURCES = $(shell find $(SRC_DIR) -name '*.cpp')
 ASMSOURCES = $(shell find $(BOOT_DIR) -name '*.s')
+KERNEL_ASMSOURCES = $(shell find $(KERNEL_DIR) -name '*.s')
 
 # Object files
-OBJECTS = $(patsubst $(BOOT_DIR)/%.s,$(BUILD_DIR)/boot/%.o,$(ASMSOURCES))
-OBJECTS += $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(CSOURCES))
-OBJECTS += $(patsubst $(SRC_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(CPPSOURCES))
+KERNEL_OBJS = $(patsubst $(KERNEL_DIR)/%.s,$(BUILD_DIR)/kernel/%.o,$(KERNEL_ASMSOURCES))
+BOOT_OBJS = $(patsubst $(BOOT_DIR)/%.s,$(BUILD_DIR)/boot/%.o,$(ASMSOURCES))
+C_OBJS = $(patsubst $(SRC_DIR)/%.c,$(BUILD_DIR)/%.o,$(CSOURCES))
+CPP_OBJS = $(patsubst $(SRC_DIR)/%.cpp,$(BUILD_DIR)/%.o,$(CPPSOURCES))
+
+OBJECTS = $(sort $(BOOT_OBJS) $(C_OBJS) $(CPP_OBJS) $(KERNEL_OBJS))
 
 # Output files
-KERNEL_ELF = $(BUILD_DIR)/kernel.elf
+KERNEL_ELF = kernel/kernel.bin
 
 # QEMU configuration
 QEMU = qemu-system-i386
@@ -61,6 +65,17 @@ $(BUILD_DIR)/boot/%.o: $(BOOT_DIR)/%.s
 	@mkdir -p $(dir $@)
 	$(AS) $< -o $@
 
+$(BUILD_DIR)/kernel/%.o: $(KERNEL_DIR)/%.s
+	@mkdir -p $(dir $@)
+	$(AS) $< -o $@
+
+# Add .s files to the valid source extensions if not already present
+SRCEXTS += .s
+
+# Add assembly compilation rule
+%.o: %.s
+	$(AS) $< -o $@
+
 iso: $(KERNEL_ELF)
 	mkdir -p isodir/boot/grub
 	cp $(KERNEL_DEST)/kernel.bin isodir/boot/kernel.bin
@@ -72,3 +87,6 @@ run: $(KERNEL_ELF)
 
 clean:
 	rm -rf $(BUILD_DIR)
+	rm -rf isodir
+	rm -f myos.iso
+	rm -f $(KERNEL_DEST)/kernel.bin

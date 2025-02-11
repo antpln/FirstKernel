@@ -17,17 +17,22 @@ void PhysicalMemoryManager::initialize(uint32_t multiboot_info) {
 
 void* PhysicalMemoryManager::allocate_frame() {
     uint32_t frame = first_free();
-    if (frame == static_cast<uint32_t>(-1)) return nullptr;
+    if (frame == UINT32_MAX) {
+        return nullptr;  // No free frames available
+    }
+
     set_frame(frame);
     used_frames++;
-    return reinterpret_cast<void*>(frame * PAGE_SIZE);
+    return (void*)(frame * PAGE_SIZE); // Return physical address
 }
 
+
 void PhysicalMemoryManager::free_frame(void* frame) {
-    uint32_t frame_num = reinterpret_cast<uint32_t>(frame) / PAGE_SIZE;
-    clear_frame(frame_num);
+    uint32_t frame_addr = (uint32_t)frame / PAGE_SIZE;
+    clear_frame(frame_addr);
     used_frames--;
 }
+
 
 size_t PhysicalMemoryManager::get_memory_size() {
     return total_frames * PAGE_SIZE;
@@ -57,13 +62,13 @@ uint32_t PhysicalMemoryManager::test_frame(uint32_t frame_addr) {
 
 uint32_t PhysicalMemoryManager::first_free() {
     for (uint32_t i = 0; i < total_frames / 32; i++) {
-        if (bitmap[i] != 0xFFFFFFFF) {
-            for (uint32_t b = 0; b < 32; b++) {
-                if (!(bitmap[i] & (1 << b))) {
-                    return i * 32 + b;
+        if (bitmap[i] != 0xFFFFFFFF) { // Not full
+            for (uint32_t j = 0; j < 32; j++) {
+                if (!(bitmap[i] & (1 << j))) {
+                    return i * 32 + j; // Found free frame
                 }
             }
         }
     }
-    return static_cast<uint32_t>(-1);
+    return UINT32_MAX; // No free frame found
 }

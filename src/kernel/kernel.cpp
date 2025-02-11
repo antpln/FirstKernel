@@ -5,8 +5,10 @@
 #include "kernel/idt.h"
 #include "kernel/memory.h"
 #include "kernel/tests/memtest.h"
+#include "kernel/tests/pagetest.h"
 #include "utils.h"
 #include <stdio.h>  // Changed back to just stdio.h since include path is set in Makefile
+
 
 #ifdef __cplusplus
 extern "C"
@@ -81,6 +83,8 @@ extern "C"
 			writeError("Multiple allocations test failed\n");
 		}
 		printf("Memory size is %d\n", PhysicalMemoryManager::get_memory_size());
+
+		paging_test();
 
 		terminal.writestring("Kernel initialization complete\n");
 

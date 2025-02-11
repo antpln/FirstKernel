@@ -5,6 +5,7 @@
 #include "kernel/idt.h"
 #include "kernel/memory.h"
 #include "kernel/paging.h"
+#include "kernel/idt.h"
 #include "kernel/heap.h"
 #include "kernel/serial.h"
 #include "kernel/tests/memtest.h"
@@ -50,55 +51,24 @@ extern "C"
 		terminal.initialize();
 		terminal.writestring("Initializing kernel...\n");
 
-		// Step 1: Initialize the Physical Memory Manager (PMM)
 		printf("[INIT] Initializing Physical Memory Manager...\n");
 		PhysicalMemoryManager::initialize(multiboot_info);
 	
-		// Step 2: Initialize Virtual Memory (Paging)
 		printf("[INIT] Initializing Virtual Memory Manager...\n");
 		vmm_init();
 	
-		// Step 3: Enable Interrupts (Only after paging is stable)
 		printf("[INIT] Enabling Interrupts...\n");
 		asm volatile("sti"); // Enable interrupts
-	
-		// Step 4: Run Tests (Verify paging)
-		printf("[TEST] Running Paging Test...\n");
-		paging_test();
 
-		terminal.writestring("\nRunning memory tests...\n");
+		printf("[INIT] Initializing IDT...\n");
+		init_idt();
 
-		if (MemoryTester::test_allocation())
-		{
-			writeSuccess("Basic allocation test passed\n");
-		}
-		else
-		{
-			writeError("Basic allocation test failed\n");
-		}
-
-		if (MemoryTester::test_free())
-		{
-			writeSuccess("Memory free test passed\n");
-		}
-		else
-		{
-			writeError("Memory free test failed\n");
-		}
-
-		if (MemoryTester::test_multiple_allocations())
-		{
-			writeSuccess("Multiple allocations test passed\n");
-		}
-		else
-		{
-			writeError("Multiple allocations test failed\n");
-		}
-		printf("Memory size is %d\n", PhysicalMemoryManager::get_memory_size());
-
-		printf("Initializing kernel heap...\n");
+		printf("[INIT] Initializing kernel heap...\n");
 		heap_init();
-		heap_test();
+
+		printf("[INIT] Initializing serial port...\n");
+		serial_init();
+
 		
 
 		terminal.writestring("Kernel initialization complete\n");
@@ -108,8 +78,6 @@ extern "C"
 		terminal.setcolor(terminal.make_color(VGA_COLOR_BROWN, VGA_COLOR_BLACK));
 		terminal.writestring(ascii_guitar);
 
-		serial_init();
-		serial_print("Hello from serial port\n");
 
 
 	}

@@ -31,9 +31,32 @@ void serial_write(char c) {
     outb(COM1, c);
 }
 
+
+
 // Send a null-terminated string over the serial port
 void serial_print(const char* str) {
     while (*str) {
         serial_write(*str++);
     }
+}
+// Check if data is available to read
+static int serial_is_data_ready() {
+    return inb(COM1 + 5) & 0x01;  // Bit 0: Data Ready
+}
+
+char serial_read() {
+    while(!serial_is_data_ready());
+    return inb(COM1);
+}
+void serial_readline(char* buffer, int size) {
+    int i = 0;
+    char c;
+    while (i < size - 1) {
+        c = serial_read();
+        if (c == '\r' || c == '\n') {
+            break;
+        }
+        buffer[i++] = c;
+    }
+    buffer[i] = '\0';
 }

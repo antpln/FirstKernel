@@ -46,13 +46,20 @@ extern "C"
 		terminal.initialize();
 		terminal.writestring("Initializing kernel...\n");
 
-		// Initialize IDT
-		init_idt();
-		writeSuccess("IDT initialized\n");
-
-		// Initialize memory management
+		// Step 1: Initialize the Physical Memory Manager (PMM)
+		printf("[INIT] Initializing Physical Memory Manager...\n");
 		PhysicalMemoryManager::initialize(multiboot_info);
-		writeSuccess("Physical Memory Manager initialized\n");
+	
+		// Step 2: Initialize Virtual Memory (Paging)
+		printf("[INIT] Initializing Virtual Memory Manager...\n");
+		vmm_init();
+	
+		// Step 3: Enable Interrupts (Only after paging is stable)
+		printf("[INIT] Enabling Interrupts...\n");
+		asm volatile("sti"); // Enable interrupts
+	
+		// Step 4: Run Tests (Verify paging)
+		printf("[TEST] Running Paging Test...\n");
 
 		terminal.writestring("\nRunning memory tests...\n");
 

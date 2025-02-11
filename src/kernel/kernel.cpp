@@ -4,8 +4,11 @@
 #include "kernel/vga.h"
 #include "kernel/idt.h"
 #include "kernel/memory.h"
+#include "kernel/paging.h"
+#include "kernel/heap.h"
 #include "kernel/tests/memtest.h"
 #include "kernel/tests/pagetest.h"
+#include "kernel/tests/heaptest.h"
 #include "utils.h"
 #include <stdio.h>  // Changed back to just stdio.h since include path is set in Makefile
 
@@ -60,6 +63,7 @@ extern "C"
 	
 		// Step 4: Run Tests (Verify paging)
 		printf("[TEST] Running Paging Test...\n");
+		paging_test();
 
 		terminal.writestring("\nRunning memory tests...\n");
 
@@ -91,7 +95,10 @@ extern "C"
 		}
 		printf("Memory size is %d\n", PhysicalMemoryManager::get_memory_size());
 
-		paging_test();
+		printf("Initializing kernel heap...\n");
+		heap_init();
+		heap_test();
+		
 
 		terminal.writestring("Kernel initialization complete\n");
 

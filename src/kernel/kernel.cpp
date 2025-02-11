@@ -4,6 +4,7 @@
 #include "kernel/vga.h"
 #include "kernel/idt.h"
 #include "kernel/memory.h"
+#include "kernel/tests/memtest.h"
 #include "utils.h"
 
 #ifdef __cplusplus
@@ -50,15 +51,33 @@ extern "C"
 		PhysicalMemoryManager::initialize(multiboot_info);
 		writeSuccess("Physical Memory Manager initialized\n");
 
-		// Test memory allocation
-		void *frame = PhysicalMemoryManager::allocate_frame();
-		if (frame)
+		terminal.writestring("\nRunning memory tests...\n");
+
+		if (MemoryTester::test_allocation())
 		{
-			writeSuccess("Successfully allocated memory frame\n");
+			writeSuccess("Basic allocation test passed\n");
 		}
 		else
 		{
-			writeError("Failed to allocate memory frame\n");
+			writeError("Basic allocation test failed\n");
+		}
+
+		if (MemoryTester::test_free())
+		{
+			writeSuccess("Memory free test passed\n");
+		}
+		else
+		{
+			writeError("Memory free test failed\n");
+		}
+
+		if (MemoryTester::test_multiple_allocations())
+		{
+			writeSuccess("Multiple allocations test passed\n");
+		}
+		else
+		{
+			writeError("Multiple allocations test failed\n");
 		}
 
 		terminal.writestring("Kernel initialization complete\n");

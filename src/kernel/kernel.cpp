@@ -60,6 +60,9 @@ extern "C"
 		// Step 3: Enable Interrupts (Only after paging is stable)
 		printf("[INIT] Enabling Interrupts...\n");
 		asm volatile("sti"); // Enable interrupts
+
+		printf("[INIT] Initializing Interrupt Descriptor Table (IDT)...\n");
+		init_idt();
 	
 		// Step 4: Run Tests (Verify paging)
 		printf("[TEST] Running Paging Test...\n");

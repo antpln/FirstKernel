@@ -6,6 +6,7 @@
 #include "kernel/memory.h"
 #include "kernel/paging.h"
 #include "kernel/heap.h"
+#include "kernel/serial.h"
 #include "kernel/tests/memtest.h"
 #include "kernel/tests/pagetest.h"
 #include "kernel/tests/heaptest.h"
@@ -106,6 +107,11 @@ extern "C"
 		terminal.writestring("Good evening...\n");
 		terminal.setcolor(terminal.make_color(VGA_COLOR_BROWN, VGA_COLOR_BLACK));
 		terminal.writestring(ascii_guitar);
+
+		serial_init();
+		serial_print("Hello from serial port\n");
+
+
 	}
 
 #ifdef __cplusplus

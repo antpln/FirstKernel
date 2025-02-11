@@ -1,26 +1,25 @@
 {
     "configurations": [
         {
-            "name": "Linux",
+            "name": "i686-elf",
             "includePath": [
-                "${workspaceFolder}/**"
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/include"
             ],
-            "defines": [],
-            "compilerPath": "/usr/bin/clang",
-            "cStandard": "c17",
-            "cppStandard": "c++17",
-            "intelliSenseMode": "linux-clang-x64"
-        },
-        {
-            "name": "i686",
-            "includePath": [
-                "${workspaceFolder}/**"
+            "defines": [
+                "__i386__",
+                "__kernel__"
             ],
-            "defines": [],
             "compilerPath": "/usr/bin/i686-elf-gcc",
-            "cStandard": "c17",
-            "cppStandard": "c++17",
-            "intelliSenseMode": "${default}"
+            "cStandard": "gnu99",
+            "cppStandard": "gnu++17",
+            "intelliSenseMode": "linux-gcc-x86",
+            "compilerArgs": [
+                "-ffreestanding",
+                "-O2",
+                "-Wall",
+                "-Wextra"
+            ]
         }
     ],
     "version": 4

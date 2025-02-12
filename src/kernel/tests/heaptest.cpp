@@ -23,7 +23,6 @@ void heap_test() {
             printf("[FAIL] Allocations overlap or are out of order!\n");
         }
     } else {
-        if()
         return;
     }
 

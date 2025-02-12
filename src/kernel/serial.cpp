@@ -17,7 +17,6 @@ void serial_init() {
     outb(COM1 + 1, 0x00);
     outb(COM1 + 3, 0x03);    // 8 bits, no parity, one stop bit
     outb(COM1 + 2, 0xC7);    // Enable FIFO, clear them, 14-byte threshold
-    outb(COM1 + 4, 0x0B);    // Enable IRQs, RTS/DSR set
 }
 
 // Check if the serial port is ready to send data
@@ -49,6 +48,11 @@ char serial_read() {
     return inb(COM1);
 }
 void serial_readline(char* buffer, int size) {
+    if(buffer == nullptr || size <= 0) {
+        return;
+    }
+    //Disable interrupts
+    asm("cli");
     int i = 0;
     char c;
     while (i < size - 1) {

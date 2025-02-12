@@ -78,6 +78,13 @@ extern "C"
 		terminal.setcolor(terminal.make_color(VGA_COLOR_BROWN, VGA_COLOR_BLACK));
 		terminal.writestring(ascii_guitar);
 
+		serial_print("Good evening...\n");
+		serial_print("Enter test string : ");
+		char buffer[256];
+		serial_readline(buffer, 256);
+		serial_print("You entered : ");
+		serial_print(buffer);
+		serial_print("\n");
 
 
 	}

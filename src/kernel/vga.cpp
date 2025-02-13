@@ -75,3 +75,13 @@ void Terminal::writeLine(const char* str) {
     writestring(str);
     new_line();
 }
+
+void Terminal::clear() {
+    for (size_t y = 0; y < VGA_HEIGHT; y++) {
+        for (size_t x = 0; x < VGA_WIDTH; x++) {
+            buffer[y * VGA_WIDTH + x] = make_entry(' ', color);
+        }
+    }
+    row = 0;
+    column = 0;
+}

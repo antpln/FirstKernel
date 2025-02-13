@@ -18,3 +18,9 @@ uint16_t inw(uint16_t port) {
     asm volatile("inw %1, %0" : "=a"(ret) : "dN"(port));
     return ret;
 }
+
+void io_wait(void) {
+    // A simple way to enforce I/O wait on older hardware. On newer systems/QEMU,
+    // it might not be strictly necessary, but it's traditional.
+    asm volatile ("outb %%al, $0x80" : : "a"(0));
+}

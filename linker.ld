@@ -49,4 +49,6 @@ SECTIONS
 
 	/* The compiler may produce other sections, by default it will put them in
 	   a segment with the same name. Simply add stuff here as needed. */
+	. = ALIGN(4);
+	kernel_end = .;
 }

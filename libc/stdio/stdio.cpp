@@ -70,6 +70,14 @@ int printf(const char* format, ...) {
                     terminal.putchar(c);
                     break;
                 }
+                case 'p': { // Pointer
+                    void* ptr = va_arg(args, void*);
+                    uintptr_t addr = (uintptr_t)ptr;
+                    itoa(addr, buffer, 16);
+                    terminal.writestring("0x");
+                    terminal.writestring(buffer);
+                    break;
+                }
                 case '%': { // Literal %
                     terminal.putchar('%');
                     break;

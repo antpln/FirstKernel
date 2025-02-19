@@ -11,7 +11,7 @@ typedef struct heap_block {
 static heap_block_t* free_list = NULL;  // Free list of memory blocks
 static uint32_t heap_end = KERNEL_HEAP_START;  // Track heap growth
 
-void heap_init() {
+void init_heap() {
     // Initialize the heap with a single large free block
     free_list = (heap_block_t*)KERNEL_HEAP_START;
     free_list->size = KERNEL_HEAP_SIZE - sizeof(heap_block_t);

@@ -47,6 +47,13 @@ SECTIONS
 		*(.bss)
 	}
 
+	/* Kernel Stack (Grows Downwards) */
+    .bootstrap_stack ALIGN(16) : {
+        __stack_bottom = .;
+        *(.bootstrap_stack)
+        __stack_top = .;
+    }
+
 	/* The compiler may produce other sections, by default it will put them in
 	   a segment with the same name. Simply add stuff here as needed. */
 	. = ALIGN(4);

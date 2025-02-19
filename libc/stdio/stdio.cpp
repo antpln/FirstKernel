@@ -2,7 +2,7 @@
 #include <kernel/vga.h>
 #include <stdarg.h>
 
-extern Terminal terminal; // Add this line to access the singleton defined in kernel.cpp
+extern Terminal terminal; // Access singleton terminal object
 
 int putchar(char c) {
     terminal.putchar(c);
@@ -15,29 +15,29 @@ int puts(const char* str) {
     return 0;
 }
 
-// Convert integer to string (helper function for printf)
-static void itoa(int value, char* buffer, int base) {
+// Convert integer to string (supports base 10 and 16)
+static void itoa(uint32_t value, char* buffer, int base) {
     static char digits[] = "0123456789ABCDEF";
-    char temp[32];
-    int i = 0, j = 0;
-    
-    if (value < 0 && base == 10) {
-        buffer[j++] = '-';
-        value = -value;
+    char temp[32]; // Temporary buffer
+    int i = 0;
+
+    if (value == 0) {  // Handle 0 explicitly
+        buffer[i++] = '0';
+    } else {
+        while (value) { 
+            temp[i++] = digits[value % base];
+            value /= base;
+        }
     }
 
-    do {
-        temp[i++] = digits[value % base];
-        value /= base;
-    } while (value);
-
+    // Reverse the string into `buffer`
+    int j = 0;
     while (i > 0) {
-        buffer[j++] = temp[--i];
+        buffer[j++] = temp[--i]; 
     }
-    buffer[j] = '\0';
+    buffer[j] = '\0';  // Null-terminate the string
 }
 
-// Simple `printf` implementation
 int printf(const char* format, ...) {
     va_list args;
     va_start(args, format);
@@ -48,14 +48,25 @@ int printf(const char* format, ...) {
         if (*format == '%') {
             format++;
             switch (*format) {
-                case 'd': { // Integer
+                case 'd': { // Signed Integer
                     int num = va_arg(args, int);
+                    if (num < 0) {
+                        terminal.putchar('-'); // Print minus sign for negative numbers
+                        num = -num;
+                    }
+                    itoa(num, buffer, 10);
+                    terminal.writestring(buffer);
+                    break;
+                }
+                case 'u': { // Unsigned Integer
+                    unsigned int num = va_arg(args, unsigned int);
                     itoa(num, buffer, 10);
                     terminal.writestring(buffer);
                     break;
                 }
                 case 'x': { // Hexadecimal
-                    int num = va_arg(args, int);
+                    unsigned int num = va_arg(args, unsigned int);
+                    terminal.writestring("0x"); // Add '0x' prefix for clarity
                     itoa(num, buffer, 16);
                     terminal.writestring(buffer);
                     break;
@@ -72,13 +83,12 @@ int printf(const char* format, ...) {
                 }
                 case 'p': { // Pointer
                     void* ptr = va_arg(args, void*);
-                    uintptr_t addr = (uintptr_t)ptr;
-                    itoa(addr, buffer, 16);
                     terminal.writestring("0x");
+                    itoa((uintptr_t)ptr, buffer, 16);
                     terminal.writestring(buffer);
                     break;
                 }
-                case '%': { // Literal %
+                case '%': { // Literal '%'
                     terminal.putchar('%');
                     break;
                 }

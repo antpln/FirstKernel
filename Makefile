@@ -17,7 +17,7 @@ $(shell mkdir -p $(KERNEL_DEST))
 
 # Compiler flags
 CFLAGS = -O2 -g -std=gnu99 -ffreestanding -Wall -Wextra -I$(INCLUDE_DIR) -I$(LIBC_DIR)/include
-CXXFLAGS = -O2 -g -ffreestanding -Wall -Wextra -fno-exceptions -fno-rtti -I$(INCLUDE_DIR) -I$(LIBC_DIR)/include
+CXXFLAGS = -O2 -g -ffreestanding -Wall -Wextra -fno-exceptions -fno-rtti -I$(INCLUDE_DIR) -I$(LIBC_DIR)/include 
 LDFLAGS = -ffreestanding -O2 -nostdlib
 
 # Source files
@@ -45,7 +45,7 @@ KERNEL_ELF = kernel/kernel.bin
 QEMU = qemu-system-i386
 QEMU_FLAGS = -kernel $(KERNEL_ELF)
 
-.PHONY: all clean run directories iso debug
+.PHONY: all clean run directories iso debug runiso
 
 all: directories $(KERNEL_ELF)
 
@@ -97,29 +97,24 @@ iso: $(KERNEL_ELF)
 	mkdir -p isodir/boot/grub
 	cp $(KERNEL_DEST)/kernel.bin isodir/boot/kernel.bin
 	cp grub.cfg isodir/boot/grub/grub.cfg
-	grub-mkrescue -o myos.iso isodir
+	$(CXX) -T linker.ld -o $(KERNEL_DEST)/kernel2.bin $(LDFLAGS) $(OBJECTS) -lgcc
+	cp $(KERNEL_DEST)/kernel2.bin isodir/boot/kernel.bin
+	grub-mkrescue -o kernel.iso isodir
 
 run: $(KERNEL_ELF)
 	$(QEMU) $(QEMU_FLAGS)
 
+runiso: iso
+	$(QEMU) -cdrom kernel.iso
+
 clean:
 	rm -rf $(BUILD_DIR)
 	rm -rf isodir
-	rm -f myos.iso
+	rm -f kernel.iso
 	rm -f $(KERNEL_DEST)/kernel.bin
 
 # Add debug target
 debug:
-	@echo "LIBC_CSOURCES = $(LIBC_CSOURCES)"
-	@echo "LIBC_CPPSOURCES = $(LIBC_CPPSOURCES)"
-	@echo "LIBC_C_OBJS = $(LIBC_C_OBJS)"
-	@echo "LIBC_CPP_OBJS = $(LIBC_CPP_OBJS)"
-	@echo "Build commands that would be used:"
-	@echo "C++ files:"
-	@for file in $(LIBC_CPPSOURCES); do \
-		echo "$(CXX) -c $$file -o build/libc/$$(basename $$file .cpp).o $(CXXFLAGS)"; \
-	done
-	@echo "LIBC_CPPSOURCES:"
-	@for f in $(LIBC_CPPSOURCES); do echo "  $$f"; done
-	@echo "LIBC_CPP_OBJS:"
-	@for f in $(LIBC_CPP_OBJS); do echo "  $$f"; done
+	$(MAKE) clean
+	$(MAKE) CFLAGS="$(CFLAGS) -O0 -g" ASFLAGS="--32"
+	qemu-system-i386 -S -s -kernel kernel/kernel.bin &

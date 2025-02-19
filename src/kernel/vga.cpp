@@ -1,4 +1,5 @@
 #include <kernel/vga.h>
+#include <kernel/port_io.h>
 
 Terminal::Terminal() : row(0), column(0), color(0), buffer(nullptr) {}
 
@@ -28,20 +29,32 @@ void Terminal::putentry_at(char c, uint8_t color, size_t x, size_t y) {
     buffer[index] = make_entry(c, color);
 }
 
+void Terminal::update_cursor()
+{
+    uint16_t pos = row * VGA_WIDTH + column;
+    outb(0x3D4, 0x0F);
+    outb(0x3D5, (uint8_t)(pos & 0xFF));
+    outb(0x3D4, 0x0E);
+    outb(0x3D5, (uint8_t)((pos >> 8) & 0xFF));
+}
+
 void Terminal::new_line() {
     column = 0;
     if (++row == VGA_HEIGHT) {
-        // Scroll content up
-        for (size_t y = 0; y < VGA_HEIGHT - 1; y++) {
-            for (size_t x = 0; x < VGA_WIDTH; x++) {
-                buffer[y * VGA_WIDTH + x] = buffer[(y + 1) * VGA_WIDTH + x];
-            }
-        }
-        // Clear last line
+        scroll();
+        row = VGA_HEIGHT - 1;
+    }
+    update_cursor();
+}
+
+void Terminal::scroll() {
+    for (size_t y = 0; y < VGA_HEIGHT - 1; y++) {
         for (size_t x = 0; x < VGA_WIDTH; x++) {
-            buffer[(VGA_HEIGHT-1) * VGA_WIDTH + x] = make_entry(' ', color);
+            buffer[y * VGA_WIDTH + x] = buffer[(y + 1) * VGA_WIDTH + x];
         }
-        row--;
+    }
+    for (size_t x = 0; x < VGA_WIDTH; x++) {
+        buffer[(VGA_HEIGHT - 1) * VGA_WIDTH + x] = make_entry(' ', color);
     }
 }
 
@@ -55,6 +68,7 @@ void Terminal::putchar(char c) {
     if (++column == VGA_WIDTH) {
         new_line();
     }
+    update_cursor();
 }
 
 void Terminal::setcolor(uint8_t new_color) {

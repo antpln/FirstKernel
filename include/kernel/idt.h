@@ -20,5 +20,5 @@ struct IDTDescriptor {
 
 void init_idt();
 void idt_set_gate(uint8_t num, uint32_t offset, uint16_t selector, uint8_t flags);
-
+void debug_idt_entry(int i);
 #endif

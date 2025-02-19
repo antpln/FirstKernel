@@ -37,6 +37,7 @@ private:
     uint16_t make_entry(unsigned char uc, uint8_t color);
     void putentry_at(char c, uint8_t color, size_t x, size_t y);
     void new_line();
+    void scroll(); // Add this declaration
 
 public:
     Terminal();
@@ -48,6 +49,7 @@ public:
     void putchar(char c);
     uint8_t make_color(enum vga_color fg, enum vga_color bg);
     void clear();
+    void update_cursor();
 };
 
 #endif

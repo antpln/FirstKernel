@@ -6,11 +6,49 @@
 #include "kernel/memory.h"
 #include "kernel/paging.h"
 #include "kernel/heap.h"
+#include "kernel/pic.h"
+#include "kernel/keyboard.h"
+#include "kernel/gdt.h"
 #include "kernel/tests/memtest.h"
 #include "kernel/tests/pagetest.h"
 #include "kernel/tests/heaptest.h"
 #include "utils.h"
-#include <stdio.h>  // Changed back to just stdio.h since include path is set in Makefile
+#include <stdio.h> // Changed back to just stdio.h since include path is set in Makefile
+
+
+void check_interrupts()
+{
+	uint32_t flags;
+	__asm__ volatile("pushf; pop %0" : "=r"(flags));
+
+	if (flags & (1 << 9))
+	{
+		printf("Interrupts are ENABLED.\n");
+	}
+	else
+	{
+		printf("Interrupts are DISABLED!\n");
+	}
+}
+
+
+void dump_stack() {
+    uint32_t *esp;
+    asm volatile ("mov %%esp, %0" : "=r" (esp));
+
+    printf("ESP: 0x%x\n", esp);
+    for (int i = 0; i < 10; i++) {
+        printf("[%d] 0x%x\n", i, esp[i]);
+    }
+}
+
+void dump_gdt() {
+    GDTPtr gdtr;
+	asm volatile("sgdt %0" : "=m"(gdtr));
+	printf("GDT Base=0x%x, Limit=0x%x\n", gdtr.base, gdtr.limit);
+}
+
+
 
 
 #ifdef __cplusplus
@@ -33,6 +71,7 @@ extern "C"
 
 	void kernel_main(uint32_t multiboot_info)
 	{
+
 		char *ascii_guitar = R"(
           Q
          /|\
@@ -41,74 +80,39 @@ extern "C"
        ~H| |/
             ~)";
 		terminal.initialize();
-		terminal.writestring("Good evening ...");
-		terminal.setcolor(terminal.make_color(VGA_COLOR_BROWN, VGA_COLOR_BLACK));
-		terminal.writestring(ascii_guitar);
-		terminal.writestring("\n");
+		uint32_t cr0;
+		asm volatile ("mov %%cr0, %0" : "=r"(cr0)); // Read CR0 register
+		if (cr0 & 1) {
+			printf("Running in Protected Mode\n");
+		} else {
+			printf("Running in Real Mode\n");
+		}
+		init_gdt();  // sets up GDT and flushes it
+		dump_gdt();
 
-		terminal.initialize();
-		terminal.writestring("Initializing kernel...\n");
+		//Set up heap
+		init_heap();
 
-		// Step 1: Initialize the Physical Memory Manager (PMM)
-		printf("[INIT] Initializing Physical Memory Manager...\n");
-		PhysicalMemoryManager::initialize(multiboot_info);
-	
-		// Step 2: Initialize Virtual Memory (Paging)
-		printf("[INIT] Initializing Virtual Memory Manager...\n");
-		vmm_init();
-	
-		// Step 3: Enable Interrupts (Only after paging is stable)
-		printf("[INIT] Enabling Interrupts...\n");
-		asm volatile("sti"); // Enable interrupts
+		keyboard_install();
 
-		printf("[INIT] Initializing Interrupt Descriptor Table (IDT)...\n");
+		// Remap the PIC
+		init_pic();
+
+		// Initialize the IDT
 		init_idt();
-	
-		// Step 4: Run Tests (Verify paging)
-		printf("[TEST] Running Paging Test...\n");
-		paging_test();
 
-		terminal.writestring("\nRunning memory tests...\n");
+		__asm__ volatile("sti");
 
-		if (MemoryTester::test_allocation())
-		{
-			writeSuccess("Basic allocation test passed\n");
-		}
-		else
-		{
-			writeError("Basic allocation test failed\n");
+		while(1){
+			__asm__ volatile("hlt");
 		}
 
-		if (MemoryTester::test_free())
-		{
-			writeSuccess("Memory free test passed\n");
-		}
-		else
-		{
-			writeError("Memory free test failed\n");
-		}
 
-		if (MemoryTester::test_multiple_allocations())
-		{
-			writeSuccess("Multiple allocations test passed\n");
-		}
-		else
-		{
-			writeError("Multiple allocations test failed\n");
-		}
-		printf("Memory size is %d\n", PhysicalMemoryManager::get_memory_size());
 
-		printf("Initializing kernel heap...\n");
-		heap_init();
-		heap_test();
-		
+		//keyboard_poll();
 
-		terminal.writestring("Kernel initialization complete\n");
 
-		terminal.setcolor(terminal.make_color(VGA_COLOR_LIGHT_GREY, VGA_COLOR_BLACK));
-		terminal.writestring("Good evening...\n");
-		terminal.setcolor(terminal.make_color(VGA_COLOR_BROWN, VGA_COLOR_BLACK));
-		terminal.writestring(ascii_guitar);
+
 	}
 
 #ifdef __cplusplus

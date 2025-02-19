@@ -29,3 +29,10 @@ void int_to_string(int num, char* buffer) {
         buffer[len - j - 1] = temp;
     }
 }
+
+uint16_t low_16(uint32_t addr) {
+    return (uint16_t)(addr & 0xFFFF);
+}
+uint16_t high_16(uint32_t addr) {
+    return (uint16_t)((addr >> 16) & 0xFFFF);
+}

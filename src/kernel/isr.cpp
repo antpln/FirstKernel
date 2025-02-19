@@ -1,4 +1,5 @@
 #include <kernel/isr.h>
+#include <kernel/pic.h>
 #include <stdio.h>
 #include <kernel/port_io.h>
 
@@ -10,30 +11,70 @@ static isr_t interrupt_handlers[ISR_COUNT];
 // Registers a custom ISR handler for a given interrupt
 void register_interrupt_handler(uint8_t n, isr_t handler) {
     interrupt_handlers[n] = handler;
-}
 
-// The common ISR handler, called by the assembly stub
-extern "C" void isr_handler(registers_t* regs) {
-    if (interrupt_handlers[regs->int_no]) {
-        isr_t handler = interrupt_handlers[regs->int_no];
-        handler(regs);
+    if (n < 32) {
+        printf("[IDT] Registered ISR %d -> Function at 0x%x\n", n, (uint32_t)handler);
     } else {
-        printf("[ISR] Unhandled interrupt: %d\n", regs->int_no);
+        printf("[IDT] Registered IRQ %d -> Function at 0x%x\n", n - 32, (uint32_t)handler);
     }
 }
 
-// IRQ handler (for hardware interrupts)
+void debug_pic_state() {
+    uint8_t master_mask = inb(0x21);
+    uint8_t slave_mask = inb(0xA1);
+    printf("[PIC] Master mask: 0x%x, Slave mask: 0x%x\n", 
+           master_mask, slave_mask);
+}
+
+
+// ISR Handler (for CPU exceptions)
+extern "C" void isr_handler(registers_t* regs) {
+    // Print the interrupt code (exception number)
+    printf("ISR Exception: Interrupt %d, Error Code: %d\n", regs->int_no, regs->err_code);
+
+    // Handle critical exceptions like page faults (Interrupt 14)
+    if (regs->int_no == 14) {
+        printf("Page Fault! Faulting address might be invalid.\n");
+        // Further handling logic can be added here
+    }
+
+    // Halt if it's a critical CPU exception
+    if (regs->int_no < 32) {
+        printf("Critical CPU Exception! Halting...\n");
+        for (;;) __asm__("hlt");  // Infinite loop to halt execution
+    }
+}
+
+// IRQ Handler (for hardware interrupts)
 extern "C" void irq_handler(registers_t* regs) {
-    // Send End Of Interrupt (EOI) to PIC
-    if (regs->int_no >= 40) {
-        // Send reset signal to slave PIC
-        outb(0xA0, 0x20);
-    }
-    // Send reset signal to master PIC
-    outb(0x20, 0x20);
+    // Send an EOI (end of interrupt) signal to the PICs
+        uint32_t irq_nb = regs->int_no - 32;
 
-    if (interrupt_handlers[regs->int_no]) {
-        isr_t handler = interrupt_handlers[regs->int_no];
-        handler(regs);
-    }
+        if(regs->int_no >= 40) {
+            // Send reset signal to slave PIC
+            outb(0xA0, 0x20);
+        }
+        if(regs->int_no >= 32) {
+            // Send reset signal to master PIC
+            outb(0x20, 0x20);
+        }
+        if(irq_nb == 0) {
+            // Timer interrupt
+            // Increment the system uptime
+            //printf("Timer interrupt\n");
+        }
+        else {
+            if (interrupt_handlers[regs->int_no]) {
+                isr_t handler = interrupt_handlers[regs->int_no];
+                handler(regs);
+            }
+            else {
+            }
+
+        }
 }
+
+
+
+
+

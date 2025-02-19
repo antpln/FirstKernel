@@ -16,6 +16,8 @@ uint8_t inb(uint16_t port);
 // Read a word (2 bytes) from a port
 uint16_t inw(uint16_t port);
 
+void io_wait();
+
 #ifdef __cplusplus
 }
 #endif

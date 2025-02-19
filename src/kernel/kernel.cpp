@@ -9,9 +9,11 @@
 #include "kernel/pic.h"
 #include "kernel/keyboard.h"
 #include "kernel/gdt.h"
+#include "kernel/timer.h"
 #include "kernel/tests/memtest.h"
 #include "kernel/tests/pagetest.h"
 #include "kernel/tests/heaptest.h"
+
 #include "utils.h"
 #include <stdio.h> // Changed back to just stdio.h since include path is set in Makefile
 
@@ -99,6 +101,9 @@ extern "C"
 
 		// Initialize the IDT
 		init_idt();
+
+		// Initialize the PIT timer to 1 Hz
+		init_timer(1);
 
 		__asm__ volatile("sti");
 

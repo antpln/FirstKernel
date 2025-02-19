@@ -87,9 +87,8 @@ extern "C"
 		} else {
 			printf("Running in Real Mode\n");
 		}
-		init_gdt();  // sets up GDT and flushes it
-		dump_gdt();
 
+		init_gdt();  // sets up GDT and flushes it
 		//Set up heap
 		init_heap();
 
@@ -106,13 +105,6 @@ extern "C"
 		while(1){
 			__asm__ volatile("hlt");
 		}
-
-
-
-		//keyboard_poll();
-
-
-
 	}
 
 #ifdef __cplusplus

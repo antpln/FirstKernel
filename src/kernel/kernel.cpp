@@ -11,6 +11,7 @@
 #include "kernel/gdt.h"
 #include "kernel/timer.h"
 #include "kernel/shell.h"
+#include "kernel/ramfs.h"
 #include "kernel/tests/memtest.h"
 #include "kernel/tests/pagetest.h"
 #include "kernel/tests/heaptest.h"
@@ -94,6 +95,24 @@ extern "C"
 		init_gdt();  // sets up GDT and flushes it
 		//Set up heap
 		init_heap();
+
+		// Initialize the RAMFS.
+		fs_init();
+
+		// (Optionally) Create some built-in files or directories.
+		FSNode* root = fs_get_root();
+		FSNode* readme = fs_create_node("README", FS_FILE);
+		if (readme) {
+			// Allocate a buffer for the file content.
+			readme->size = 128;
+			readme->data = (uint8_t*)kmalloc(readme->size);
+			if (readme->data) {
+				// Write some content into the file.
+				const char* msg = "Welcome to your kernel RAMFS!";
+				strncpy((char*)readme->data, msg, readme->size);
+			}
+			fs_add_child(root, readme);
+		}
 
 		keyboard_install();
 		// Initialize the PIT timer to 1000 Hz

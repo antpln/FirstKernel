@@ -7,6 +7,16 @@
 #include <kernel/keyboard.h>
 #include <kernel/isr.h>
 
+typedef void (*command_func_t)(const char* args);
+
+typedef struct shell_command_t {
+    const char* name;
+    command_func_t function;
+    const char* description;
+} shell_command_t;
+
+void cmd_help(const char* args);
+
 // Process a completed command line.
 void shell_process_command(const char* cmd);
 

@@ -5,47 +5,144 @@
 #include <kernel/keyboard.h>
 #include <kernel/isr.h>
 #include <kernel/timer.h>
+#include <kernel/ramfs.h>
+#include <kernel/heap.h>
+#include <kernel/shell.h>
 
 #define SHELL_BUFFER_SIZE 256
+#define NUM_COMMANDS 256
 
 // A global command buffer and index to keep track of the current command.
 static char shell_buffer[SHELL_BUFFER_SIZE];
 static uint32_t shell_index = 0;
+static FSNode* current_dir = NULL;
 
-// Process a completed command line.
-void shell_process_command(const char* cmd) {
-    // For this basic shell, we'll support three commands:
-    //  1. "help"  : Print available commands.
-    //  2. "clear" : Clear the screen.
-    //  3. "echo ..." : Echo back the provided text.
-    if (strcmp(cmd, "help") == 0) {
-        printf("Available commands: help, clear, echo <text>\n");
+static bool input_enabled = true;
+
+void cmd_ls(const char* args) {
+    if (!current_dir) current_dir = fs_get_root();
+    for (size_t i = 0; i < current_dir->child_count; i++) {
+        printf("%s  ", current_dir->children[i]->name);
     }
-    else if (strcmp(cmd, "clear") == 0) {
-        // Simple screen clear by printing several newlines.
-        for (int i = 0; i < 50; i++) {
-            printf("\n");
+    printf("\n");
+}
+
+void cmd_cd(const char* args) {
+    if (!args || strlen(args) == 0) {
+        printf("Usage: cd <directory>\n");
+        return;
+    }
+
+    if (strcmp(args, "..") == 0) {
+        if (current_dir && current_dir->parent) {
+            current_dir = current_dir->parent;
+        } else {
+            printf("Already at root.\n");
         }
+        return;
     }
-    else if (strncmp(cmd, "echo ", 5) == 0) {
-        printf("%s\n", cmd + 5);
-    }
-    else if(strcmp(cmd, "uptime") == 0) {
-        printf("Uptime : %d ms\n", get_ticks());
-    }
-    else if (strlen(cmd) == 0) {
-        // Empty command, do nothing.
-    }
-    else {
-        printf("Unknown command: %s\n", cmd);
+
+    FSNode* target = fs_find_child(current_dir, args);
+    if (target && target->type == FS_DIRECTORY) {
+        current_dir = target;
+    } else {
+        printf("cd: No such directory '%s'\n", args);
     }
 }
 
+void cmd_cat(const char* args) {
+    if (!args || strlen(args) == 0) {
+        printf("Usage: cat <file>\n");
+        return;
+    }
+
+    FSNode* file = fs_find_child(current_dir, args);
+    if (file && file->type == FS_FILE) {
+        printf("%s\n", file->data);
+    } else {
+        printf("cat: No such file '%s'\n", args);
+    }
+}
+
+void cmd_touch(const char* args) {
+    if (!args || strlen(args) == 0) {
+        printf("Usage: touch <filename>\n");
+        return;
+    }
+
+    FSNode* file = fs_create_node(args, FS_FILE);
+    if (file) {
+        file->size = 256;
+        file->data = (uint8_t*)kmalloc(file->size);
+        memset(file->data, 0, file->size);
+        fs_add_child(current_dir, file);
+        printf("File '%s' created.\n", args);
+    }
+}
+
+void cmd_mkdir(const char* args) {
+    if (!args || strlen(args) == 0) {
+        printf("Usage: mkdir <dirname>\n");
+        return;
+    }
+
+    FSNode* dir = fs_create_node(args, FS_DIRECTORY);
+    if (dir) {
+        fs_add_child(current_dir, dir);
+        printf("Directory '%s' created.\n", args);
+    }
+}
+
+void cmd_uptime(const char* args) {
+    uint32_t ticks = get_ticks();
+    printf("Uptime: %u ms\n", ticks);
+}
+
+shell_command_t commands[NUM_COMMANDS] = {
+    {"help", cmd_help, "Show available commands"},
+    {"ls", cmd_ls, "List directory contents"},
+    {"cd", cmd_cd, "Change directory"},
+    {"cat", cmd_cat, "Display file contents"},
+    {"touch", cmd_touch, "Create a new file"},
+    {"mkdir", cmd_mkdir, "Create a new directory"},
+    {"uptime", cmd_uptime, "Show system uptime"},
+};
+
+void cmd_help(const char* args) {
+    printf("Available commands:\n");
+    for (size_t i = 0; i < sizeof(commands) / sizeof(shell_command_t); i++) {
+        printf("  %s: %s\n", commands[i].name, commands[i].description);
+    }
+}
+
+void shell_process_command(const char* cmd)
+{
+    // Split the command into command name and arguments.
+    char* command = strtok((char*)cmd, " ");
+    char* args = strtok(NULL, " ");
+
+    // Find the command in the list and execute it.
+    for (size_t i = 0; i < sizeof(commands) / sizeof(shell_command_t); i++)
+    {
+        if (strcmp(command, commands[i].name) == 0)
+        {
+            commands[i].function(args);
+            return;
+        }
+    }
+
+    printf("Command not found: %s\n", command);
+}
+
 // This function is called by the keyboard interrupt handler whenever a valid character arrives.
-void shell_handle_key(keyboard_event ke) {
+void shell_handle_key(keyboard_event ke)
+{
+    if (!input_enabled) return;
     // Handle backspace. We assume backspace is sent as ASCII 0x08 or DEL (127).
-    if (ke.scancode == '\b' || ke.scancode == 127) {
-        if (shell_index > 0) {
+    if (ke.scancode == '\b' || ke.scancode == 127)
+    {
+        if (shell_index > 0)
+        {
             shell_index--;
             // Erase the last character on screen (move back, print space, move back again).
             printf("\b \b");
@@ -54,7 +151,8 @@ void shell_handle_key(keyboard_event ke) {
     }
 
     // If the character is newline or carriage return, we process the command.
-    if (ke.scancode == '\n' || ke.scancode == '\r' || ke.enter) {
+    if (ke.scancode == '\n' || ke.scancode == '\r' || ke.enter)
+    {
         // Terminate the command string.
         shell_buffer[shell_index] = '\0';
         printf("\n");
@@ -65,8 +163,10 @@ void shell_handle_key(keyboard_event ke) {
         return;
     }
 
-    if(ke.backspace) {
-        if (shell_index > 0) {
+    if (ke.backspace)
+    {
+        if (shell_index > 0)
+        {
             shell_index--;
             // Erase the last character on screen (move back, print space, move back again).
             printf("\b \b");
@@ -76,9 +176,11 @@ void shell_handle_key(keyboard_event ke) {
 
     // If the character is a printable character, we add it to the buffer.
     char c = kb_to_ascii(ke);
-    if(c != 0) {
+    if (c != 0)
+    {
         // Check if we have space in the buffer.
-        if (shell_index < SHELL_BUFFER_SIZE - 1) {
+        if (shell_index < SHELL_BUFFER_SIZE - 1)
+        {
             shell_buffer[shell_index] = c;
             shell_index++;
             printf("%c", c);
@@ -87,7 +189,8 @@ void shell_handle_key(keyboard_event ke) {
 }
 
 // Initialize the shell (print a welcome message and the prompt).
-void shell_init() {
+void shell_init()
+{
     printf("Welcome to nutshell!\n");
     printf("nutshell> ");
 }

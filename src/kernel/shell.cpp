@@ -30,8 +30,8 @@ void shell_process_command(const char* cmd) {
     else if (strncmp(cmd, "echo ", 5) == 0) {
         printf("%s\n", cmd + 5);
     }
-    else if(strcmp(cmd, "time") == 0) {
-        printf("Time : %d ms\n", get_ticks());
+    else if(strcmp(cmd, "uptime") == 0) {
+        printf("Uptime : %d ms\n", get_ticks());
     }
     else if (strlen(cmd) == 0) {
         // Empty command, do nothing.

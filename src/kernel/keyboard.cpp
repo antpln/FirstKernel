@@ -119,6 +119,7 @@ keyboard_event read_keyboard() {
         caps_lock_active = !caps_lock_active;
     }
     event.enter = scancode == KBD_SCANCODE_ENTER;
+    event.backspace = scancode == KBD_SCANCODE_BACKSPACE;
     event.caps_lock = caps_lock_active;
     return event;
 }

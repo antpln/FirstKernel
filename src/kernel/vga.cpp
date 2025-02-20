@@ -59,6 +59,18 @@ void Terminal::scroll() {
 }
 
 void Terminal::putchar(char c) {
+    if (c == '\b') {  // Handle backspace
+        if (column > 0) {
+            column--;
+        } else if (row > 0) {
+            row--;
+            column = VGA_WIDTH - 1;
+        }
+        putentry_at(' ', color, column, row);
+        update_cursor();
+        return;
+    }
+
     if (c == '\n') {
         new_line();
         return;

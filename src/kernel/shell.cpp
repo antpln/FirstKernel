@@ -61,6 +61,15 @@ void shell_handle_key(keyboard_event ke) {
         return;
     }
 
+    if(ke.backspace) {
+        if (shell_index > 0) {
+            shell_index--;
+            // Erase the last character on screen (move back, print space, move back again).
+            printf("\b \b");
+        }
+        return;
+    }
+
     // If the character is a printable character, we add it to the buffer.
     char c = kb_to_ascii(ke);
     if(c != 0) {

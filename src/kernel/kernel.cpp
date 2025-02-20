@@ -96,6 +96,8 @@ extern "C"
 		init_heap();
 
 		keyboard_install();
+		// Initialize the PIT timer to 1000 Hz
+		init_timer(1000);
 
 		// Remap the PIC
 		init_pic();
@@ -105,8 +107,7 @@ extern "C"
 
 		shell_init();
 
-		// Initialize the PIT timer to 1 Hz
-		//init_timer(1);
+
 
 		__asm__ volatile("sti");
 

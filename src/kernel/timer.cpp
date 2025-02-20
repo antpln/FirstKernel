@@ -8,9 +8,6 @@ volatile uint32_t timer_ticks = 0;
 // Timer interrupt handler: increments tick count and prints every 100 ticks.
 void timer_handler(registers_t* regs) {
     timer_ticks++;
-    if (timer_ticks % 100 == 0) {
-        printf("[TIMER] Tick: %d\n", timer_ticks);
-    }
 }
 
 // Initialize the PIT timer to the given frequency.
@@ -27,4 +24,8 @@ void init_timer(uint32_t frequency) {
     register_interrupt_handler(32, timer_handler);
 
     printf("[TIMER] Timer initialized to %d Hz\n", frequency);
+}
+
+uint32_t get_ticks() {
+    return timer_ticks;
 }

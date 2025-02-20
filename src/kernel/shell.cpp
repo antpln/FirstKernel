@@ -22,7 +22,11 @@ static bool input_enabled = true;
 void cmd_ls(const char* args) {
     if (!current_dir) current_dir = fs_get_root();
     for (size_t i = 0; i < current_dir->child_count; i++) {
-        printf("%s  ", current_dir->children[i]->name);
+        if(current_dir->children[i]->type == FS_FILE) {
+            printf("%s  ", current_dir->children[i]->name);
+        } else {
+            printf("%s/  ", current_dir->children[i]->name);
+        }
     }
     printf("\n");
 }
@@ -111,7 +115,9 @@ shell_command_t commands[NUM_COMMANDS] = {
 void cmd_help(const char* args) {
     printf("Available commands:\n");
     for (size_t i = 0; i < sizeof(commands) / sizeof(shell_command_t); i++) {
-        printf("  %s: %s\n", commands[i].name, commands[i].description);
+        if(commands[i].function != NULL) {
+            printf("  %s: %s\n", commands[i].name, commands[i].description);
+        }
     }
 }
 

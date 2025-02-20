@@ -10,6 +10,7 @@
 #include "kernel/keyboard.h"
 #include "kernel/gdt.h"
 #include "kernel/timer.h"
+#include "kernel/shell.h"
 #include "kernel/tests/memtest.h"
 #include "kernel/tests/pagetest.h"
 #include "kernel/tests/heaptest.h"
@@ -102,8 +103,10 @@ extern "C"
 		// Initialize the IDT
 		init_idt();
 
+		shell_init();
+
 		// Initialize the PIT timer to 1 Hz
-		init_timer(1);
+		//init_timer(1);
 
 		__asm__ volatile("sti");
 

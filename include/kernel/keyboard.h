@@ -22,6 +22,7 @@ typedef struct keyboard_event {
     bool alt;
     bool special;
     bool release;
+    bool enter;
 } keyboard_event;
 
 

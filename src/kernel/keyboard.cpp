@@ -4,6 +4,7 @@
 #include "kernel/isr.h"
 #include "kernel/keyboard.h" // Include the new header file
 #include "stdio.h"           // Include the new header file
+#include "kernel/shell.h"
 
 
 
@@ -117,6 +118,7 @@ keyboard_event read_keyboard() {
     {
         caps_lock_active = !caps_lock_active;
     }
+    event.enter = scancode == KBD_SCANCODE_ENTER;
     event.caps_lock = caps_lock_active;
     return event;
 }
@@ -124,11 +126,7 @@ keyboard_event read_keyboard() {
 void keyboard_callback(registers_t *regs)
 {
     keyboard_event event = read_keyboard();
-    char ascii = kb_to_ascii(event);
-    if (ascii)
-    {
-        printf("%c", ascii);
-    }
+    shell_handle_key(event);
 }
 
 void wait_for_input_clear()

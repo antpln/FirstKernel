@@ -42,6 +42,27 @@ void fs_add_child(FSNode* parent, FSNode* child) {
     child->parent = parent;
 }
 
+void fs_remove_child(FSNode* parent, FSNode* child) {
+    if (!parent || parent->type != FS_DIRECTORY)
+        return;
+    for (size_t i = 0; i < parent->child_count; i++) {
+        if (parent->children[i] == child) {
+            // If the child has children, recursively remove them.
+            if (child->type == FS_DIRECTORY) {
+                for (size_t j = 0; j < child->child_count; j++) {
+                    fs_remove_child(child, child->children[j]);
+                }
+            }
+            // Shift remaining children to the left.
+            for (size_t j = i; j < parent->child_count - 1; j++) {
+                parent->children[j] = parent->children[j + 1];
+            }
+            parent->child_count--;
+            return;
+        }
+    }
+}
+
 FSNode* fs_find_child(FSNode* parent, const char* name) {
     if (!parent || parent->type != FS_DIRECTORY)
         return NULL;

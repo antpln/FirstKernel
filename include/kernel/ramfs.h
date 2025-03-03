@@ -27,6 +27,7 @@ typedef struct FSNode {
 // Filesystem interface.
 FSNode* fs_create_node(const char* name, FSNodeType type);
 void fs_add_child(FSNode* parent, FSNode* child);
+void fs_remove_child(FSNode* parent, FSNode* child);
 FSNode* fs_find_child(FSNode* parent, const char* name);
 
 void fs_init();

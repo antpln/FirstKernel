@@ -102,6 +102,36 @@ void cmd_uptime(const char* args) {
     printf("Uptime: %u ms\n", ticks);
 }
 
+void cmd_rm(const char* args) {
+    if (!args || strlen(args) == 0) {
+        printf("Usage: rm <filename>\n");
+        return;
+    }
+
+    FSNode* file = fs_find_child(current_dir, args);
+    if (file && file->type == FS_FILE) {
+        fs_remove_child(current_dir, file);
+        printf("File '%s' removed.\n", args);
+    } else {
+        printf("rm: No such file '%s'\n", args);
+    }
+}
+
+void cmd_rmdir(const char* args) {
+    if (!args || strlen(args) == 0) {
+        printf("Usage: rmdir <dirname>\n");
+        return;
+    }
+
+    FSNode* dir = fs_find_child(current_dir, args);
+    if (dir && dir->type == FS_DIRECTORY) {
+        fs_remove_child(current_dir, dir);
+        printf("Directory '%s' removed.\n", args);
+    } else {
+        printf("rmdir: No such directory '%s'\n", args);
+    }
+}
+
 shell_command_t commands[NUM_COMMANDS] = {
     {"help", cmd_help, "Show available commands"},
     {"ls", cmd_ls, "List directory contents"},
@@ -109,6 +139,8 @@ shell_command_t commands[NUM_COMMANDS] = {
     {"cat", cmd_cat, "Display file contents"},
     {"touch", cmd_touch, "Create a new file"},
     {"mkdir", cmd_mkdir, "Create a new directory"},
+    {"rm", cmd_rm, "Remove a file"},
+    {"rmdir", cmd_rmdir, "Remove a directory"},
     {"uptime", cmd_uptime, "Show system uptime"},
 };
 

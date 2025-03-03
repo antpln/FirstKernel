@@ -54,19 +54,15 @@ void pic_unmask_irq(uint8_t irq) {
     }
 
     value = inb(port);
-    printf("[PIC] Before unmasking IRQ%d: 0x%x\n", irq, value);
 
     value &= ~(1 << irq); // Clear the IRQ bit to unmask it
     outb(port, value);
 
     // Read back to confirm it worked
     value = inb(port);
-    printf("[PIC] After unmasking IRQ%d: 0x%x\n", irq, value);
 
     if (value & (1 << irq)) {
         printf("[ERROR] IRQ%d is STILL masked!\n", irq);
-    } else {
-        printf("[SUCCESS] IRQ%d is now unmasked.\n", irq);
     }
 }
 

@@ -150,17 +150,14 @@ void keyboard_flush()
 
 void keyboard_reset()
 {
-    printf("Resetting keyboard controller...\n");
     wait_for_input_clear();
     outb(0x64, 0xFF); // Send reset command
 
     uint8_t response = inb(0x60); // Expect 0xFA (ACK) or 0xAA (Self-test passed)
-    printf("Keyboard reset response: %x\n", response);
 }
 
 void keyboard_enable()
 {
-    printf("Enabling keyboard...\n");
     keyboard_reset();
     keyboard_flush();
 

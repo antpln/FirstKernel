@@ -4,17 +4,6 @@
 #include "kernel/memory.h"
 #include "kernel/multiboot.h"     // so we can interpret multiboot_info_t
 
-// In your code, define the kernel_end symbol in the linker script, e.g.:
-//   SECTIONS {
-//     .text : { ... }
-//     .rodata : { ... }
-//     .data : { ... }
-//     .bss : { ... }
-//     . = ALIGN(4);
-//     kernel_end = .;
-//   }
-//
-// Then declare it as an extern in C:
 extern "C" uint32_t kernel_end;
 
 // Static class members
@@ -66,13 +55,6 @@ void PhysicalMemoryManager::initialize(uint32_t multiboot_info_addr)
 
     // Clear the bitmap (mark all frames as free initially)
     memset(bitmap, 0, bytes_needed);
-
-    // Optionally, you may want to mark frames used by the kernel
-    // or other reserved areas as "used" here, so they're not allocated.
-    // For example, all frames from 0 up to next_free_physical / PAGE_SIZE.
-    // We'll skip that in this minimal example.
-
-    // Now the PMM is ready to start allocating frames.
 }
 
 void* PhysicalMemoryManager::allocate_frame()

@@ -19,42 +19,6 @@
 #include "utils.h"
 #include <stdio.h> // Changed back to just stdio.h since include path is set in Makefile
 
-
-void check_interrupts()
-{
-	uint32_t flags;
-	__asm__ volatile("pushf; pop %0" : "=r"(flags));
-
-	if (flags & (1 << 9))
-	{
-		printf("Interrupts are ENABLED.\n");
-	}
-	else
-	{
-		printf("Interrupts are DISABLED!\n");
-	}
-}
-
-
-void dump_stack() {
-    uint32_t *esp;
-    asm volatile ("mov %%esp, %0" : "=r" (esp));
-
-    printf("ESP: 0x%x\n", esp);
-    for (int i = 0; i < 10; i++) {
-        printf("[%d] 0x%x\n", i, esp[i]);
-    }
-}
-
-void dump_gdt() {
-    GDTPtr gdtr;
-	asm volatile("sgdt %0" : "=m"(gdtr));
-	printf("GDT Base=0x%x, Limit=0x%x\n", gdtr.base, gdtr.limit);
-}
-
-
-
-
 #ifdef __cplusplus
 extern "C"
 
@@ -62,16 +26,6 @@ extern "C"
 #endif
 
 	Terminal terminal;
-	void writeSuccess(char *message)
-	{
-		terminal.setcolor(terminal.make_color(VGA_COLOR_GREEN, VGA_COLOR_BLACK));
-		terminal.writestring(message);
-	}
-	void writeError(char *message)
-	{
-		terminal.setcolor(terminal.make_color(VGA_COLOR_RED, VGA_COLOR_BLACK));
-		terminal.writestring(message);
-	}
 
 	void kernel_main(uint32_t multiboot_info)
 	{
@@ -84,13 +38,6 @@ extern "C"
        ~H| |/
             ~)";
 		terminal.initialize();
-		uint32_t cr0;
-		asm volatile ("mov %%cr0, %0" : "=r"(cr0)); // Read CR0 register
-		if (cr0 & 1) {
-			printf("Running in Protected Mode\n");
-		} else {
-			printf("Running in Real Mode\n");
-		}
 
 		init_gdt();  // sets up GDT and flushes it
 		//Set up heap
@@ -99,7 +46,7 @@ extern "C"
 		// Initialize the RAMFS.
 		fs_init();
 
-		// (Optionally) Create some built-in files or directories.
+		// Create some built-in files or directories.
 		FSNode* root = fs_get_root();
 		FSNode* readme = fs_create_node("README", FS_FILE);
 		if (readme) {
@@ -108,7 +55,7 @@ extern "C"
 			readme->data = (uint8_t*)kmalloc(readme->size);
 			if (readme->data) {
 				// Write some content into the file.
-				const char* msg = "Welcome to your kernel RAMFS!";
+				const char* msg = "Welcome to ContinuumOS!";
 				strncpy((char*)readme->data, msg, readme->size);
 			}
 			fs_add_child(root, readme);

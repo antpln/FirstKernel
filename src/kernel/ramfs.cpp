@@ -59,6 +59,9 @@ void fs_init() {
     if (root == NULL) {
         printf("Error initializing filesystem: could not allocate root directory.\n");
     }
+    else {
+        printf("[RAMFS] Filesystem initialized.\n");
+    }
 }
 
 FSNode* fs_get_root() {

@@ -21,10 +21,9 @@ extern "C" void isr_handler(registers_t *regs)
     printf("ISR Exception: Interrupt %d, Error Code: %d\n", regs->int_no, regs->err_code);
 
     // Handle critical exceptions like page faults (Interrupt 14)
-    if (regs->int_no == 14)
-    {
-        printf("Page Fault! Faulting address might be invalid.\n");
-        // Further handling logic can be added here
+    if(interrupt_handlers[regs->int_no]) {
+        isr_t handler = interrupt_handlers[regs->int_no];
+        handler(regs);
     }
 
     // Halt if it's a critical CPU exception

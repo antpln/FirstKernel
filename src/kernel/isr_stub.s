@@ -11,27 +11,36 @@ debug_fmt:
 
 # Common ISR Stub
 isr_common_stub:
-    cli                     # Disable interrupts
-    pusha                   # Save general-purpose registers
-    movw %ds, %ax           # Save data segment
-    pushl %eax
-    movw $0x10, %ax         # Load kernel data segment
+    cli
+    pusha                   # Push all registers (32 bytes)
+    movw %ds, %ax
+    pushl %eax             # Save ds (4 bytes)
+
+    # Load kernel data segment
+    movw $0x10, %ax
     movw %ax, %ds
     movw %ax, %es
     movw %ax, %fs
     movw %ax, %gs
 
-    call isr_handler        # Call ISR handler
+    # Push pointer to registers_t structure
+    pushl %esp            # Push current stack pointer as argument to handler
+    
+    call isr_handler      # Call IRQ handler
+    
+    addl $4, %esp        # Remove registers_t pointer argument
 
-    popl %eax               # Restore old data segment
+    # Restore data segments
+    popl %eax            # Restore original data segment
     movw %ax, %ds
     movw %ax, %es
     movw %ax, %fs
     movw %ax, %gs
-    popa                    # Restore registers
-    addl $8, %esp           # Clean up pushed error code and interrupt number
-    sti                     # Enable interrupts
-    iret                    # Return from interrupt
+
+    popa                 # Restore all registers
+    addl $8, %esp       # Clean up error code and interrupt number
+    sti                 # Re-enable interrupts
+    iret                     # Return from interrupt
 
 irq_common_stub:
     cli
@@ -162,8 +171,9 @@ isr13:
 .global isr14
 isr14:
     cli
-    pushl $14               # Interrupt number (CPU already pushes error code)
+    pushl $14 # the CPU already pushes an error code
     jmp isr_common_stub
+
 
 .global isr15
 isr15:
@@ -182,7 +192,6 @@ isr16:
 .global isr17
 isr17:
     cli
-    pushl $0                # Push dummy error code
     pushl $17               # Push interrupt number
     jmp isr_common_stub
 

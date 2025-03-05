@@ -39,24 +39,37 @@ extern "C"
             ~)";
 		terminal.initialize();
 
-		init_gdt();  // sets up GDT and flushes it
-		//Set up heap
+		init_gdt(); // sets up GDT and flushes it
+
+		// Remap the PIC
+		init_pic();
+
+		// Initialize the IDT
+		init_idt();
+
+		// Initialize virtual memory management
+		vmm_init();
+		vmm_enable();
+
+		// Set up heap
 		init_heap();
 
 		// Initialize the RAMFS.
 		fs_init();
 
 		// Create some built-in files or directories.
-		FSNode* root = fs_get_root();
-		FSNode* readme = fs_create_node("README", FS_FILE);
-		if (readme) {
+		FSNode *root = fs_get_root();
+		FSNode *readme = fs_create_node("README", FS_FILE);
+		if (readme)
+		{
 			// Allocate a buffer for the file content.
 			readme->size = 128;
-			readme->data = (uint8_t*)kmalloc(readme->size);
-			if (readme->data) {
+			readme->data = (uint8_t *)kmalloc(readme->size);
+			if (readme->data)
+			{
 				// Write some content into the file.
-				const char* msg = "Welcome to ContinuumOS!";
-				strncpy((char*)readme->data, msg, readme->size);
+				const char *msg = "Welcome to ContinuumOS!";
+				strncpy((char *)readme->data, msg, readme->size);
 			}
 			fs_add_child(root, readme);
 		}
@@ -65,19 +78,12 @@ extern "C"
 		// Initialize the PIT timer to 1000 Hz
 		init_timer(1000);
 
-		// Remap the PIC
-		init_pic();
-
-		// Initialize the IDT
-		init_idt();
-
 		shell_init();
-
-
 
 		__asm__ volatile("sti");
 
-		while(1){
+		while (1)
+		{
 			__asm__ volatile("hlt");
 		}
 	}

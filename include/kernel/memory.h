@@ -16,14 +16,18 @@ public:
     static size_t get_memory_size();
     static size_t get_free_frames();
 
-private:
-    static uint32_t* bitmap;
-    static uint32_t total_frames;
-    static uint32_t used_frames;
-
     static void set_frame(uint32_t frame_addr);
     static void clear_frame(uint32_t frame_addr);
     static uint32_t test_frame(uint32_t frame_addr);
     static uint32_t first_free();
+    static uint32_t used_frames;
+
+
+private:
+    static uint32_t* bitmap;
+    static uint32_t total_frames;
+
+
+
 };
 #endif

@@ -1,61 +1,58 @@
-/* The bootloader will look at this image and start execution at the symbol
-   designated as the entry point. */
+/* The bootloader starts execution at _start (defined in your assembly or C). */
 ENTRY(_start)
 
-/* Tell where the various sections of the object files will be put in the final
-   kernel image. */
 SECTIONS
 {
-	/* It used to be universally recommended to use 1M as a start offset,
-	   as it was effectively guaranteed to be available under BIOS systems.
-	   However, UEFI has made things more complicated, and experimental data
-	   strongly suggests that 2M is a safer place to load. In 2016, a new
-	   feature was introduced to the multiboot2 spec to inform bootloaders
-	   that a kernel can be loaded anywhere within a range of addresses and
-	   will be able to relocate itself to run from such a loader-selected
-	   address, in order to give the loader freedom in selecting a span of
-	   memory which is verified to be available by the firmware, in order to
-	   work around this issue. This does not use that feature, so 2M was
-	   chosen as a safer option than the traditional 1M. */
-	. = 2M;
+    /* Link/load addresses start at 2 MiB (0x00200000). */
+    . = 0x00200000;
 
-	/* First put the multiboot header, as it is required to be put very early
-	   in the image or the bootloader won't recognize the file format.
-	   Next we'll put the .text section. */
-	.text BLOCK(4K) : ALIGN(4K)
-	{
-		*(.multiboot)
-		*(.text)
-	}
+    /* 
+     * The .text section, with the multiboot header first,
+     * so the bootloader sees the magic immediately.
+     */
+    .text BLOCK(4K) : ALIGN(4K)
+    {
+        /* Place the multiboot header at the very start */
+        *(.multiboot)
 
-	/* Read-only data. */
-	.rodata BLOCK(4K) : ALIGN(4K)
-	{
-		*(.rodata)
-	}
+        /* Then the normal .text code */
+        *(.text)
+    }
 
-	/* Read-write data (initialized) */
-	.data BLOCK(4K) : ALIGN(4K)
-	{
-		*(.data)
-	}
+    /* Example: place .lowmem after .text. You may choose to put it first if you want. */
+    .lowmem BLOCK(4K) : ALIGN(4096)
+    {
+        *(.lowmem)
+    }
 
-	/* Read-write data (uninitialized) and stack */
-	.bss BLOCK(4K) : ALIGN(4K)
-	{
-		*(COMMON)
-		*(.bss)
-	}
+    /* Read-only data. */
+    .rodata BLOCK(4K) : ALIGN(4K)
+    {
+        *(.rodata)
+    }
 
-	/* Kernel Stack (Grows Downwards) */
-    .bootstrap_stack ALIGN(16) : {
+    /* Initialized data. */
+    .data BLOCK(4K) : ALIGN(4K)
+    {
+        *(.data)
+    }
+
+    /* Uninitialized data (BSS). */
+    .bss BLOCK(4K) : ALIGN(4K)
+    {
+        *(COMMON)
+        *(.bss)
+    }
+
+    /* Bootstrap stack. */
+    .bootstrap_stack ALIGN(16) :
+    {
         __stack_bottom = .;
         *(.bootstrap_stack)
         __stack_top = .;
     }
 
-	/* The compiler may produce other sections, by default it will put them in
-	   a segment with the same name. Simply add stuff here as needed. */
-	. = ALIGN(4);
-	kernel_end = .;
+    /* Mark the end of the kernel image. */
+    . = ALIGN(4);
+    kernel_end = .;
 }

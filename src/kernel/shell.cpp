@@ -32,6 +32,7 @@ void cmd_ls(const char* args) {
 }
 
 void cmd_cd(const char* args) {
+    if (!current_dir) current_dir = fs_get_root();
     if (!args || strlen(args) == 0) {
         printf("Usage: cd <directory>\n");
         return;
@@ -55,6 +56,7 @@ void cmd_cd(const char* args) {
 }
 
 void cmd_cat(const char* args) {
+    if (!current_dir) current_dir = fs_get_root();
     if (!args || strlen(args) == 0) {
         printf("Usage: cat <file>\n");
         return;
@@ -69,6 +71,7 @@ void cmd_cat(const char* args) {
 }
 
 void cmd_touch(const char* args) {
+    if (!current_dir) current_dir = fs_get_root();
     if (!args || strlen(args) == 0) {
         printf("Usage: touch <filename>\n");
         return;
@@ -85,6 +88,7 @@ void cmd_touch(const char* args) {
 }
 
 void cmd_mkdir(const char* args) {
+    if (!current_dir) current_dir = fs_get_root();
     if (!args || strlen(args) == 0) {
         printf("Usage: mkdir <dirname>\n");
         return;
@@ -103,6 +107,7 @@ void cmd_uptime(const char* args) {
 }
 
 void cmd_rm(const char* args) {
+    if (!current_dir) current_dir = fs_get_root();
     if (!args || strlen(args) == 0) {
         printf("Usage: rm <filename>\n");
         return;
@@ -118,6 +123,7 @@ void cmd_rm(const char* args) {
 }
 
 void cmd_rmdir(const char* args) {
+    if (!current_dir) current_dir = fs_get_root();
     if (!args || strlen(args) == 0) {
         printf("Usage: rmdir <dirname>\n");
         return;

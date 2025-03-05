@@ -92,3 +92,30 @@ void kfree(void* ptr) {
         block->next = block->next->next;
     }
 }
+
+// Reallocate memory from the heap
+void* krealloc(void* ptr, size_t size) {
+    if (size == 0) {
+        kfree(ptr);
+        return NULL;
+    }
+
+    if (!ptr) {
+        return kmalloc(size);
+    }
+
+    heap_block_t* block = (heap_block_t*)((uintptr_t)ptr - sizeof(heap_block_t));
+    if (block->size >= size) {
+        return ptr; // The current block is already large enough
+    }
+
+    void* new_ptr = kmalloc(size);
+    if (!new_ptr) {
+        return NULL; // Allocation failed
+    }
+
+    memcpy(new_ptr, ptr, block->size); // Copy old data to new block
+    kfree(ptr); // Free the old block
+
+    return new_ptr;
+}

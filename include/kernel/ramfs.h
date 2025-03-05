@@ -1,6 +1,10 @@
 #ifndef RAMFS_H
 #define RAMFS_H
 
+#define MAX_OPEN_FILES 64
+// Maximum number of children a directory can have.
+#define MAX_CHILDREN 32
+
 #include <stddef.h>
 #include <stdint.h>
 
@@ -10,8 +14,7 @@ enum FSNodeType {
     FS_DIRECTORY,
 };
 
-// Maximum number of children a directory can have.
-#define MAX_CHILDREN 32
+
 
 // A filesystem node: either a file or a directory.
 typedef struct FSNode {
@@ -23,6 +26,15 @@ typedef struct FSNode {
     struct FSNode** children; // Array of pointers to children (if directory)
     size_t child_count;
 } FSNode;
+
+typedef struct {
+    FSNode* node;      // Pointer to file node
+    size_t offset;     // Current read/write offset
+    int used;          // 1 if occupied, 0 otherwise
+} FileDescriptor;
+
+extern FileDescriptor fd_table[MAX_OPEN_FILES];
+
 
 // Filesystem interface.
 FSNode* fs_create_node(const char* name, FSNodeType type);
@@ -36,5 +48,11 @@ FSNode* fs_get_root();
 // Basic file operations.
 int fs_read(FSNode* file, size_t offset, size_t size, uint8_t* buffer);
 int fs_write(FSNode* file, size_t offset, size_t size, const uint8_t* buffer);
+int fs_open(FSNode* file);
+void fs_close(int fd);
+FSNode* fs_find_by_path(const char* path);
+FSNode* fs_find_by_path(const char* path, FSNode* current);
+FSNode* fs_mkdir(const char* path);
+FSNode* fs_touch(const char* path);
 
 #endif // RAMFS_H
